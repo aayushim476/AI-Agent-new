@@ -80,6 +80,31 @@
   .input-area { padding: 12px 24px 20px; background: #13131a; border-top: 1px solid #2a2a38; }
   @media (max-width: 768px) {
   .sidebar {
+    position: fixed;
+    left: -260px;
+    top: 60px;
+    height: 100%;
+    z-index: 999;
+    transition: left .3s;
+  }
+  .sidebar.open {
+    left: 0;
+  }
+  .hamburger {
+    display: flex !important;
+  }
+}
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: #e8e8f0;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+  @media (max-width: 768px) {
+  .sidebar {
     display: none;
   }
   .messages {
@@ -211,7 +236,9 @@
           </div>
         </div>
       </div>
-
+    <div class="topbar">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <span class="logo">🤖 AI Agent</span>
       <div class="input-area">
         <!-- PDF Pill — uploaded hone ke baad dikhega -->
         <div class="pdf-pill" id="pdfPill">
@@ -584,6 +611,9 @@ function toggleMic() {
     document.getElementById('micBtn').classList.remove('recording');
   };
   recognition.start();
+}
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
 }
 
 // ── INIT ──
