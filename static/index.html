@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f13; color: #e8e8f0; min-height: 100vh; }
+
+  /* AUTH */
+  .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 60% 20%, #1a1040 0%, #0f0f13 60%); }
+  .auth-card { background: #18181f; border: 1px solid #2a2a38; border-radius: 20px; padding: 44px 40px; width: 100%; max-width: 420px; box-shadow: 0 24px 60px rgba(0,0,0,0.5); }
+  .auth-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+  .auth-logo .icon { width: 40px; height: 40px; background: linear-gradient(135deg, #7c5cfc, #5b9cf6); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .auth-logo span { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #a78bfa, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .auth-card h2 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  .auth-card .subtitle { color: #6b7280; font-size: 14px; margin-bottom: 30px; }
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 13px; color: #9ca3af; margin-bottom: 6px; font-weight: 500; }
+  .form-group input { width: 100%; background: #0f0f13; border: 1px solid #2a2a38; border-radius: 10px; padding: 12px 16px; color: #e8e8f0; font-size: 15px; transition: border-color .2s; outline: none; }
+  .form-group input:focus { border-color: #7c5cfc; box-shadow: 0 0 0 3px rgba(124,92,252,0.15); }
+  .btn-primary { width: 100%; background: linear-gradient(135deg, #7c5cfc, #5b9cf6); border: none; border-radius: 10px; padding: 13px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: opacity .2s, transform .1s; }
+  .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .auth-switch { text-align: center; margin-top: 22px; font-size: 14px; color: #6b7280; }
+  .auth-switch a { color: #a78bfa; text-decoration: none; cursor: pointer; font-weight: 500; }
+  .msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 14px; display: none; }
+  .msg.error { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.3); display: block; }
+  .msg.success { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.3); display: block; }
+
+  /* APP */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+  .topbar { height: 60px; background: #18181f; border-bottom: 1px solid #2a2a38; display: flex; align-items: center; padding: 0 24px; gap: 16px; }
+  .topbar .logo { font-weight: 700; font-size: 17px; background: linear-gradient(135deg, #a78bfa, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; flex: 1; }
+  .topbar .user-badge { background: #0f0f13; border: 1px solid #2a2a38; border-radius: 20px; padding: 5px 14px 5px 10px; font-size: 13px; display: flex; align-items: center; gap: 7px; }
+  .topbar .user-badge .dot { width: 7px; height: 7px; background: #4ade80; border-radius: 50%; }
+  .topbar .logout-btn { background: none; border: 1px solid #2a2a38; border-radius: 8px; color: #9ca3af; padding: 6px 14px; font-size: 13px; cursor: pointer; transition: all .2s; }
+  .topbar .logout-btn:hover { border-color: #ef4444; color: #f87171; }
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width: 260px; background: #13131a; border-right: 1px solid #2a2a38; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .new-chat-btn { width: 100%; background: linear-gradient(135deg, #7c5cfc, #5b9cf6); border: none; border-radius: 10px; color: white; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .new-chat-btn:hover { opacity: .85; }
+  .sidebar h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #4b5563; padding: 0 4px; }
+  .session-item { padding: 10px 12px; border-radius: 10px; margin-bottom: 4px; cursor: pointer; border: 1px solid transparent; transition: all .15s; font-size: 13px; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .session-item:hover { background: #1e1e2a; border-color: #2a2a38; }
+  .session-item.active { background: #1e1e2a; border-color: #7c5cfc; color: #e8e8f0; }
+  .session-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .session-delete { background: none; border: none; color: #374151; cursor: pointer; font-size: 13px; padding: 2px 5px; border-radius: 4px; flex-shrink: 0; transition: color .15s; }
+  .session-delete:hover { color: #ef4444; }
+
+  /* CHAT */
+  .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .messages { flex: 1; padding: 24px 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+  .welcome { max-width: 600px; margin: 60px auto 0; text-align: center; }
+  .welcome .big-icon { font-size: 56px; margin-bottom: 16px; }
+  .welcome h2 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .welcome p { color: #6b7280; font-size: 15px; line-height: 1.6; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 24px; }
+  .chip { background: #18181f; border: 1px solid #2a2a38; border-radius: 20px; padding: 8px 16px; font-size: 13px; cursor: pointer; transition: all .2s; color: #9ca3af; }
+  .chip:hover { border-color: #7c5cfc; color: #a78bfa; background: rgba(124,92,252,.08); }
+  .msg-bubble { display: flex; gap: 12px; max-width: 800px; }
+  .msg-bubble.user { align-self: flex-end; flex-direction: row-reverse; }
+  .avatar { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .avatar.ai { background: linear-gradient(135deg, #7c5cfc, #5b9cf6); }
+  .avatar.user-av { background: #1e1e2a; border: 1px solid #2a2a38; }
+  .bubble-content { max-width: 680px; }
+  .bubble-content .tool-pill { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; opacity: .7; }
+  .bubble-content .text { background: #18181f; border: 1px solid #2a2a38; border-radius: 14px; padding: 14px 18px; font-size: 14px; line-height: 1.7; color: #d1d5db; white-space: pre-wrap; word-break: break-word; }
+  .bubble-content.user-content .text { background: rgba(124,92,252,.15); border-color: rgba(124,92,252,.3); color: #e8e8f0; }
+  .typing { display: flex; gap: 5px; padding: 14px 18px; }
+  .typing span { width: 8px; height: 8px; background: #4b5563; border-radius: 50%; animation: bounce .9s infinite; }
+  .typing span:nth-child(2) { animation-delay: .15s; }
+  .typing span:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+  /* INPUT AREA */
+  .input-area { padding: 12px 24px 20px; background: #13131a; border-top: 1px solid #2a2a38; }
+
+  /* PDF PILL */
+  .pdf-pill {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: rgba(124,92,252,.15);
+    border: 1px solid rgba(124,92,252,.3);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #a78bfa;
+    margin-bottom: 10px;
+    width: fit-content;
+  }
+  .pdf-pill.show { display: flex; }
+  .pdf-pill .pdf-name { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pdf-pill .remove-pdf { background: none; border: none; color: #a78bfa; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; opacity: .7; }
+  .pdf-pill .remove-pdf:hover { opacity: 1; }
+
+  .input-row { display: flex; align-items: flex-end; gap: 8px; background: #18181f; border: 1px solid #2a2a38; border-radius: 14px; padding: 10px 10px 10px 16px; transition: border-color .2s; }
+  .input-row:focus-within { border-color: #7c5cfc; box-shadow: 0 0 0 3px rgba(124,92,252,.1); }
+  .input-row textarea { flex: 1; background: none; border: none; outline: none; color: #e8e8f0; font-size: 15px; resize: none; max-height: 140px; line-height: 1.5; padding-top: 2px; }
+
+  /* PDF UPLOAD BTN */
+  .upload-btn {
+    width: 38px; height: 38px;
+    background: #1e1e2a;
+    border: 1px solid #2a2a38;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+    flex-shrink: 0;
+    color: #6b7280;
+    font-size: 18px;
+  }
+  .upload-btn:hover { border-color: #7c5cfc; color: #a78bfa; }
+  .upload-btn.has-pdf { border-color: #7c5cfc; color: #a78bfa; background: rgba(124,92,252,.1); }
+
+  /* MIC BTN */
+  .mic-btn { width: 38px; height: 38px; background: #1e1e2a; border: 1px solid #2a2a38; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; flex-shrink: 0; color: #9ca3af; }
+  .mic-btn:hover { border-color: #7c5cfc; color: #a78bfa; }
+  .mic-btn.recording { background: rgba(239,68,68,.15); border-color: #ef4444; color: #f87171; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(239,68,68,.4); } 50%{ box-shadow: 0 0 0 8px rgba(239,68,68,0); } }
+
+  /* SEND BTN */
+  .send-btn { width: 38px; height: 38px; background: linear-gradient(135deg, #7c5cfc, #5b9cf6); border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity .2s; flex-shrink: 0; }
+  .send-btn:hover { opacity: .85; }
+  .send-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .send-btn svg { width: 18px; height: 18px; fill: white; }
+
+  .input-hint { font-size: 11px; color: #374151; margin-top: 8px; text-align: center; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="auth-wrap" id="loginPage">
+  <div class="auth-card">
+    <div class="auth-logo"><div class="icon">🤖</div><span>AI Agent</span></div>
+    <h2>Welcome back</h2>
+    <p class="subtitle">Sign in to access your AI tools</p>
+    <div class="form-group"><label>Username</label><input type="text" id="loginUsername" placeholder="Enter username" /></div>
+    <div class="form-group"><label>Password</label><input type="password" id="loginPassword" placeholder="Enter password" /></div>
+    <div class="msg" id="loginMsg"></div>
+    <button class="btn-primary" onclick="doLogin()">Sign In</button>
+    <p class="auth-switch">Don't have an account? <a onclick="showRegister()">Create one</a></p>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div class="auth-wrap hidden" id="registerPage">
+  <div class="auth-card">
+    <div class="auth-logo"><div class="icon">🤖</div><span>AI Agent</span></div>
+    <h2>Create account</h2>
+    <p class="subtitle">Get started with your AI agent</p>
+    <div class="form-group"><label>Username</label><input type="text" id="regUsername" placeholder="Choose a username" /></div>
+    <div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="your@email.com" /></div>
+    <div class="form-group"><label>Password</label><input type="password" id="regPassword" placeholder="Create a password" /></div>
+    <div class="msg" id="registerMsg"></div>
+    <button class="btn-primary" onclick="doRegister()">Create Account</button>
+    <p class="auth-switch">Already have an account? <a onclick="showLogin()">Sign in</a></p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <span class="logo">🤖 AI Agent</span>
+    <div class="user-badge"><span class="dot"></span><span id="usernameDisplay">User</span></div>
+    <button class="logout-btn" onclick="logout()">Sign out</button>
+  </div>
+
+  <div class="main">
+    <div class="sidebar">
+      <button class="new-chat-btn" onclick="createNewSession()">+ New Chat</button>
+      <h3>Chat History</h3>
+      <div id="historyList"></div>
+    </div>
+
+    <div class="chat-area">
+      <div class="messages" id="messages">
+        <div class="welcome" id="welcome">
+          <div class="big-icon">🤖</div>
+          <h2>Hello !! What can I help you?</h2>
+          <p>Type, speak, or upload a PDF — I understand it all!</p>
+          <div class="chips">
+            <span class="chip" onclick="sendChip('Write a blog post about AI in 2025')">✍️ Write  Blog</span>
+            <span class="chip" onclick="sendChip('Generate an image of a futuristic city at night')">🎨 Generate Image</span>
+            <span class="chip" onclick="sendChip('Hi! How are you doing today?')">💬 Talk</span>
+            <span class="chip" onclick="sendChip('Write a blog and also generate an image about space exploration')">⚡ Multi-task</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <!-- PDF Pill — uploaded hone ke baad dikhega -->
+        <div class="pdf-pill" id="pdfPill">
+          <span>📄</span>
+          <span class="pdf-name" id="pdfName"></span>
+          <button class="remove-pdf" onclick="removePdf()">✕</button>
+        </div>
+
+        <div class="input-row">
+          <!-- Hidden file input -->
+          <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="handlePdfUpload(this)" />
+
+          <!-- + PDF Upload button -->
+          <button class="upload-btn" id="uploadBtn" onclick="document.getElementById('pdfInput').click()" title="upload PDF">
+            +
+          </button>
+
+          <textarea id="queryInput" rows="1" placeholder="Ask anything..."
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+
+          <!-- Mic button -->
+          <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="2" width="6" height="12" rx="3"/>
+              <path d="M5 10a7 7 0 0 0 14 0"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+            </svg>
+          </button>
+
+          <!-- Send button -->
+          <button class="send-btn" id="sendBtn" onclick="sendQuery()">
+            <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+          </button>
+        </div>
+        <p class="input-hint">Enter to send · Shift+Enter new line · + for PDF · 🎤 for voice</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let token = localStorage.getItem('token');
+let currentUser = localStorage.getItem('username');
+let currentSessionId = null;
+let currentPdfText = null;
+let currentPdfName = null;
+
+// ── AUTH ──
+function showLogin() {
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('registerPage').classList.add('hidden');
+}
+function showRegister() {
+  document.getElementById('registerPage').classList.remove('hidden');
+  document.getElementById('loginPage').classList.add('hidden');
+}
+function setMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'msg ' + type;
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!username || !password) return setMsg('loginMsg', 'Please fill in all fields', 'error');
+  const btn = document.querySelector('#loginPage .btn-primary');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) return setMsg('loginMsg', data.detail || 'Login failed', 'error');
+    token = data.access_token; currentUser = data.username;
+    localStorage.setItem('token', token); localStorage.setItem('username', currentUser);
+    showApp();
+  } catch (e) { setMsg('loginMsg', 'Network error!', 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Sign In'; }
+}
+
+async function doRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  if (!username || !email || !password) return setMsg('registerMsg', 'Please fill in all fields', 'error');
+  const btn = document.querySelector('#registerPage .btn-primary');
+  btn.disabled = true; btn.textContent = 'Creating...';
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) return setMsg('registerMsg', data.detail || 'Registration failed', 'error');
+    setMsg('registerMsg', 'Account created! Signing you in...', 'success');
+    setTimeout(() => {
+      document.getElementById('loginUsername').value = username;
+      document.getElementById('loginPassword').value = password;
+      doLogin();
+    }, 800);
+  } catch (e) { setMsg('registerMsg', 'Network error!', 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Create Account'; }
+}
+
+function logout() {
+  localStorage.removeItem('token'); localStorage.removeItem('username');
+  token = null; currentUser = null; currentSessionId = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+}
+
+async function showApp() {
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('registerPage').classList.add('hidden');
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('usernameDisplay').textContent = currentUser;
+  await loadSessions();
+  await createNewSession();
+}
+
+// ── PDF ──
+async function handlePdfUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const uploadBtn = document.getElementById('uploadBtn');
+  uploadBtn.textContent = '⏳';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch(`${API}/pdf/extract`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.detail || 'PDF upload failed!');
+      uploadBtn.textContent = '+';
+      return;
+    }
+
+    currentPdfText = data.text;
+    currentPdfName = file.name;
+
+    // Pill dikhao
+    document.getElementById('pdfName').textContent = file.name;
+    document.getElementById('pdfPill').classList.add('show');
+    uploadBtn.classList.add('has-pdf');
+    uploadBtn.textContent = '📄';
+
+    document.getElementById('queryInput').placeholder = 'ask anything...';
+    document.getElementById('queryInput').focus();
+
+  } catch (e) {
+    alert('PDF upload error!');
+    uploadBtn.textContent = '+';
+  }
+
+  input.value = '';
+}
+
+function removePdf() {
+  currentPdfText = null;
+  currentPdfName = null;
+  document.getElementById('pdfPill').classList.remove('show');
+  const uploadBtn = document.getElementById('uploadBtn');
+  uploadBtn.classList.remove('has-pdf');
+  uploadBtn.textContent = '+';
+  document.getElementById('queryInput').placeholder = 'Ask anything...';
+}
+
+// ── SESSIONS ──
+async function createNewSession() {
+  try {
+    const res = await fetch(`${API}/agent/session/new`, {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    currentSessionId = data.session_id;
+    removePdf();
+    clearMessages();
+    await loadSessions();
+  } catch(e) {}
+}
+
+async function loadSessions() {
+  try {
+    const res = await fetch(`${API}/agent/sessions`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+
+    // Sirf active sessions dikhao
+    const activeSessions = data.sessions.filter(s => s.is_deleted !== true);
+
+    if (!activeSessions.length) {
+      list.innerHTML = '<p style="font-size:12px;color:#374151;padding:8px">No chats yet</p>';
+      return;
+    }
+
+    activeSessions.forEach(s => {
+      const el = document.createElement('div');
+      el.className = 'session-item' + (s.session_id === currentSessionId ? ' active' : '');
+      el.innerHTML = `
+        <span class="session-title" onclick="openSession('${s.session_id}')">💬 ${s.title || 'New Chat'}</span>
+        <button class="session-delete" onclick="deleteSession('${s.session_id}')">🗑</button>`;
+      list.appendChild(el);
+    });
+  } catch(e) {}
+}
+
+
+async function openSession(sessionId) {
+  currentSessionId = sessionId;
+  removePdf();
+  clearMessages();
+  try {
+    const res = await fetch(`${API}/agent/history?session_id=${sessionId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) return;
+    const data = await res.json();
+    data.tasks.forEach(t => {
+      addMessage('user', t.query, null);
+      addMessage('ai', t.result, t.tool_used);
+    });
+    await loadSessions();
+  } catch(e) {}
+}
+
+async function deleteSession(sessionId) {
+  if (!confirm('Delete this chat?')) return;
+  await fetch(`${API}/agent/session/${sessionId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+  if (currentSessionId === sessionId) await createNewSession();
+  else await loadSessions();
+}
+
+// ── CHAT ──
+function clearMessages() {
+  document.getElementById('messages').innerHTML = `
+    <div class="welcome" id="welcome">
+      <div class="big-icon">🤖</div>
+      <h2> Hello !! What can I help you </h2>
+      <p>Type, speak, or upload a PDF — I understand it all!</p>
+      <div class="chips">
+        <span class="chip" onclick="sendChip('Write a blog post about AI in 2025')">✍️ write Blog </span>
+        <span class="chip" onclick="sendChip('Generate an image of a futuristic city at night')">🎨 Generate Image</span>
+        <span class="chip" onclick="sendChip('Hi! How are you doing today?')">💬 Talk </span>
+        <span class="chip" onclick="sendChip('Write a blog and also generate an image about space exploration')">⚡ Multi-task</span>
+      </div>
+    </div>`;
+}
+
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; }
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(); } }
+function sendChip(text) { document.getElementById('queryInput').value = text; sendQuery(); }
+
+function addMessage(role, text, tool) {
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+  const msgs = document.getElementById('messages');
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.className = 'msg-bubble ' + (isUser ? 'user' : '');
+  const toolColors = { text_generator: '#a78bfa', image_generator: '#f59e0b', chat_handler: '#34d399', task_agent: '#60a5fa', pdf_agent: '#f472b6' };
+  div.innerHTML = `
+    <div class="avatar ${isUser ? 'user-av' : 'ai'}">${isUser ? '👤' : '🤖'}</div>
+    <div class="bubble-content ${isUser ? 'user-content' : ''}">
+      ${tool ? `<div class="tool-pill" style="color:${toolColors[tool]||'#9ca3af'}">${tool.replace('_',' ')}</div>` : ''}
+      <div class="text">${text}</div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg-bubble'; div.id = 'typing-indicator';
+  div.innerHTML = `<div class="avatar ai">🤖</div><div class="bubble-content"><div class="text typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+function removeTyping() { const el = document.getElementById('typing-indicator'); if (el) el.remove(); }
+
+async function sendQuery() {
+  const input = document.getElementById('queryInput');
+  const query = input.value.trim();
+  if (!query || !token || !currentSessionId) return;
+
+  // User message mein PDF naam bhi dikhao agar hai
+  const displayQuery = currentPdfText ? `📄 ${currentPdfName}\n${query}` : query;
+  addMessage('user', displayQuery, null);
+  input.value = ''; input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+  addTyping();
+
+  try {
+    const body = { query, session_id: currentSessionId };
+    if (currentPdfText) body.pdf_text = currentPdfText;
+
+    const res = await fetch(`${API}/agent/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    removeTyping();
+
+    if (!res.ok) {
+      if (res.status === 401) { logout(); return; }
+      addMessage('ai', data.detail || 'Something went wrong', null);
+    } else {
+      addMessage('ai', data.result, data.tool_used);
+      // PDF remove mat karo — user aur questions pooch sakta hai
+      await loadSessions();
+    }
+  } catch (e) {
+    removeTyping();
+    addMessage('ai', 'Network error. Please check the server.', null);
+  } finally {
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+// ── VOICE ──
+let recognition = null;
+let isRecording = false;
+
+function toggleMic() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    alert('Chrome browser use karo voice ke liye!');
+    return;
+  }
+  if (isRecording) { recognition.stop(); return; }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true;
+  recognition.continuous = false;
+  recognition.onstart = () => {
+    isRecording = true;
+    document.getElementById('micBtn').classList.add('recording');
+    document.getElementById('queryInput').placeholder = 'how can i help you today... 🎤';
+  };
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('queryInput').value = transcript;
+    autoResize(document.getElementById('queryInput'));
+  };
+  recognition.onend = () => {
+    isRecording = false;
+    document.getElementById('micBtn').classList.remove('recording');
+    document.getElementById('queryInput').placeholder = currentPdfText ? 'PDF ke baare mein kuch bhi poocho...' : 'Ask anything...';
+    const query = document.getElementById('queryInput').value.trim();
+    if (query) sendQuery();
+  };
+  recognition.onerror = () => {
+    isRecording = false;
+    document.getElementById('micBtn').classList.remove('recording');
+  };
+  recognition.start();
+}
+
+// ── INIT ──
+if (token && currentUser) { showApp(); }
+else { document.getElementById('loginPage').classList.remove('hidden'); }
+
+document.getElementById('loginPassword').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('regPassword').addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+</script>
+</body>
+</html>
