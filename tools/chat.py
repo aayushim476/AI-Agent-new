@@ -15,7 +15,7 @@ async def handle_chat(query: str, history: list = []) -> str:
     messages.append({"role": "user", "content": query})
 
     response = client.chat.completions.create(
-        model="llama3-70b-8192",
+        model="llama3-8b-8192",",
         messages=messages,
         max_tokens=500
     )
