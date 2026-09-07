@@ -12,7 +12,7 @@ async def generate_text(query: str, history: list = []) -> str:
     messages.append({"role": "user", "content": query})
 
     response = client.chat.completions.create(
-        model="qwen/qwen3.6-27b",,
+        model="qwen/qwen3.6-27b",
         messages=messages,
         max_tokens=800
     )
