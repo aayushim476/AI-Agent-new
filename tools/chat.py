@@ -5,7 +5,7 @@ async def handle_chat(query: str, history: list = []) -> str:
     client = Groq(api_key=GROQ_API_KEY)
 
     messages = [
-        {"role": "system", "content": "You are a helpful assistant. Remember everything the user tells you in this conversation and use it when answering."}
+        {"role": "system", "content": "You are a helpful assistant. Give direct answers only. Do not show your thinking process, reasoning steps, or internal thoughts. Just give the final answer directly."}
     ]
 
     # Pichli history add karo
@@ -15,7 +15,7 @@ async def handle_chat(query: str, history: list = []) -> str:
     messages.append({"role": "user", "content": query})
 
     response = client.chat.completions.create(
-        model="qwen/qwen3.6-27b",
+        model="openai/gpt-oss-20b",
         messages=messages,
         max_tokens=500
     )
