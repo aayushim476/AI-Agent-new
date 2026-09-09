@@ -5,7 +5,8 @@ from config import HF_API_KEY
 
 # Free model from Hugging Face
 #HF_MODEL_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
-HF_MODEL_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
+#HF_MODEL_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
+HF_MODEL_URL = "https://router.huggingface.co/nebius/models/black-forest-labs/FLUX.1-schnell"
 
 async def generate_image(query: str) -> str:
     headers = {
